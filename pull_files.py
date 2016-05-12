@@ -1,8 +1,10 @@
 import os,sys,argparse
 import subprocess
+import multiprocessing
 import shlex
 import datetime
 import json
+import signal
 
 import logging
 import pycommons
@@ -38,6 +40,10 @@ BACKEND='%s@backend.phone-lab.org' % (config['user'])
 BACKEND_PROCESSED_BASE_PATH='/mnt/data/logcat'
 BACKEND_RAW_BASE_PATH='/mnt/data/upload'
 
+def _execv_worker(cmdline, dry):
+	signal.signal(signal.SIGINT, signal.SIG_IGN)
+	execv(cmdline, dry)
+
 def execv(cmdline, dry=False):
 	if not dry:
 		pycommons.run(cmdline)
@@ -62,8 +68,9 @@ def setup_parser():
 	return parser
 
 def process_processed(path, devices, dates, dry):
+	pool = multiprocessing.Pool()
+
 	for d in devices:
-		rsync_paths = []
 		for date in dates:
 			fpath = 'time/%04d/%02d/%02d.out.gz' % (date.year, date.month, date.day)
 			srcpath = os.path.join(BACKEND_PROCESSED_BASE_PATH, d, fpath)
@@ -74,16 +81,16 @@ def process_processed(path, devices, dates, dry):
 			if not os.path.exists(outdir):
 				os.makedirs(outdir)
 
-			rsync_paths.append('%s:%s' % (BACKEND, srcpath))
-		rsync_cmdline = 'rsync -avzupr --ignore-missing-args ' + ' '.join(rsync_paths) + ' ' + outdir
-		try:
-			execv(rsync_cmdline, dry)
-		except:
-			logger.warning("Could not fetch %s" % (d))
+			rsync_cmdline = 'rsync -avzupr %s:%s %s' % (BACKEND, srcpath, outpath)
+
+			pool.apply_async(_execv_worker, args=(rsync_cmdline, dry))
+	pool.close()
+	pool.join()
 
 def process_raw(path, devices, dates, dry):
+	pool = multiprocessing.Pool()
+
 	for d in devices:
-		rsync_paths = []
 		for date in dates:
 			fpath = '%04d/%02d/%02d/' % (date.year, date.month, date.day)
 			srcpath = os.path.join(BACKEND_RAW_BASE_PATH, d, fpath)
@@ -94,12 +101,10 @@ def process_raw(path, devices, dates, dry):
 			if not os.path.exists(outdir):
 				os.makedirs(outdir)
 
-			rsync_paths.append('%s:%s' % (BACKEND, srcpath))
 			rsync_cmdline = 'rsync -avzupr %s:%s %s' % (BACKEND, srcpath, outpath)
-			try:
-				execv(rsync_cmdline, dry)
-			except:
-				logger.warning("Could not fetch %s:%d.out.gz" % (d, date.day))
+			pool.apply_async(_execv_worker, args=(rsync_cmdline, dry))
+	pool.close()
+	pool.join()
 
 def main(argv):
 	parser = setup_parser()
