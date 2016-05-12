@@ -85,7 +85,7 @@ def process_raw(path, devices, dates, dry):
 	for d in devices:
 		rsync_paths = []
 		for date in dates:
-			fpath = 'time/%04d/%02d/%02d/' % (date.year, date.month, date.day)
+			fpath = '%04d/%02d/%02d/' % (date.year, date.month, date.day)
 			srcpath = os.path.join(BACKEND_RAW_BASE_PATH, d, fpath)
 
 			outpath = os.path.join(path, d, fpath)
@@ -95,12 +95,11 @@ def process_raw(path, devices, dates, dry):
 				os.makedirs(outdir)
 
 			rsync_paths.append('%s:%s' % (BACKEND, srcpath))
-		rsync_cmdline = 'rsync -avzupr --ignore-missing-args ' + ' '.join(rsync_paths) + ' ' + outdir
-		try:
-			execv(rsync_cmdline, dry)
-		except:
-			logger.warning("Could not fetch %s" % (d))
-
+			rsync_cmdline = 'rsync -avzupr %s:%s %s' % (BACKEND, srcpath, outpath)
+			try:
+				execv(rsync_cmdline, dry)
+			except:
+				logger.warning("Could not fetch %s:%d.out.gz" % (d, date.day))
 
 def main(argv):
 	parser = setup_parser()
@@ -112,7 +111,7 @@ def main(argv):
 			for line in f:
 				devices.append(line.strip())
 	else:
-		devices.append(args.device)
+		devices.extend(args.device)
 	assert len(devices) >= 1, 'Need at least one device!'
 
 	if args.processed:
