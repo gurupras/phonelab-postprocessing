@@ -2,5 +2,8 @@
 *.log
 *.pyc
 
+# Config files
+.config
+
 !.gitignore
 
