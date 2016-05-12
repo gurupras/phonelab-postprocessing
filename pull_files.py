@@ -14,21 +14,25 @@ logger = logging.getLogger(__file__)
 # Load configuration
 DIR=os.path.abspath(os.path.dirname(__file__))
 
+# Hard-coded config path
 CONFIG_PATH=os.path.join(DIR, '.config')
 try:
 	if not os.path.exists(CONFIG_PATH):
 		raise IOError("Config file '.config' not found!")
 	config = json.loads(open('.config', 'rb').read())
 except IOError, e:
+	# File does not exist
 	logger.error(str(e))
 	logger.info("Creating .config file. Please fill it out")
 	with open(CONFIG_PATH, 'wb') as f:
 		f.write(json.dumps({'user':""}, indent=2))
 	sys.exit(-1)
 except Exception, e:
+	# Some other exception occured
 	logger.error("Could not load config file:%s" % (str(e)))
 	sys.exit(-1)
 
+# Set up the backend with the specified config
 BACKEND='%s@backend.phone-lab.org' % (config['user'])
 
 BACKEND_PROCESSED_BASE_PATH='/mnt/data/logcat'
