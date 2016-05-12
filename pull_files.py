@@ -57,7 +57,7 @@ def setup_parser():
 
 	return parser
 
-def process_processed(path, devices, dates):
+def process_processed(path, devices, dates, dry):
 	for d in devices:
 		rsync_paths = []
 		for date in dates:
@@ -73,11 +73,11 @@ def process_processed(path, devices, dates):
 			rsync_paths.append('%s:%s' % (BACKEND, srcpath))
 		rsync_cmdline = 'rsync -avzupr --ignore-missing-args ' + ' '.join(rsync_paths) + ' ' + outdir
 		try:
-			execv(rsync_cmdline)
+			execv(rsync_cmdline, dry)
 		except:
 			logger.warning("Could not fetch %s" % (d))
 
-def process_raw(path, devices, dates):
+def process_raw(path, devices, dates, dry):
 	for d in devices:
 		rsync_paths = []
 		for date in dates:
@@ -93,7 +93,7 @@ def process_raw(path, devices, dates):
 			rsync_paths.append('%s:%s' % (BACKEND, srcpath))
 		rsync_cmdline = 'rsync -avzupr --ignore-missing-args ' + ' '.join(rsync_paths) + ' ' + outdir
 		try:
-			execv(rsync_cmdline)
+			execv(rsync_cmdline, dry)
 		except:
 			logger.warning("Could not fetch %s" % (d))
 
@@ -112,9 +112,9 @@ def main(argv):
 	assert len(devices) >= 1, 'Need at least one device!'
 
 	if args.processed:
-		process_processed(args.path, devices, args.date_range)
+		process_processed(args.path, devices, args.date_range, args.dry)
 	elif args.raw:
-		process_raw(args.path, devices, args.date_range)
+		process_raw(args.path, devices, args.date_range, args.dry)
 
 
 if __name__ == '__main__':
