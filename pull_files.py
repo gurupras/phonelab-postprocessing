@@ -98,8 +98,8 @@ def get_remote_files(device, remote_path, local_path, dates, callback):
 			if not line:
 				continue
 			file = " ".join(line.split()).split()[4]
-			file = os.path.join(year, month, file)
-			if file not in allowed_files:
+			ymd_file = os.path.join(year, month, file)
+			if ymd_file not in allowed_files:
 				continue
 			file_size = int(" ".join(line.split()).split()[1].replace(",", ""))
 			rpath = os.path.join(remote_path, file)
