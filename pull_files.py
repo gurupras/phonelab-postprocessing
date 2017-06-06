@@ -151,7 +151,7 @@ def process_processed(path, devices, dates, dry):
 
 	logger.info("# files: %d" % (len(file_size_dict.keys())))
 	for k, v in file_size_dict.iteritems():
-		pool.apply_async(rsync_worker, args=(k, file_size_dict[k]['local'], '-avzpr', dry, queue))
+		pool.apply_async(rsync_worker, args=(k, file_size_dict[k]['local'], '-avzupr', dry, queue))
 		#rsync_worker(k, file_size_dict[k]['local'], '-avzpr', dry, queue)
 	pool.close()
 	try:
